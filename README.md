@@ -1,4 +1,4 @@
-# DragonIsles-Client
+![Banner Image](https://www.leafal.io/assets/img/dragonisles/banner.png)
 Repository for the Dragon Isles client.
 
 ## License
