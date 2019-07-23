@@ -145,13 +145,15 @@ public class WorldChunk : MonoBehaviour
             {
                 if (chunk.blockMap.ContainsKey(posPX))
                 {
-                    Debug.Log(posPX);
                     return true;
                 }
             }
             else return true;
         }
-        else if (blockMap.ContainsKey(posPX)) return true;
+        else
+        {
+            if (blockMap.ContainsKey(posPX)) return true;
+        }
         return false;
     }
 

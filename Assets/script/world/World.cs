@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,9 +13,9 @@ public class World : MonoBehaviour
     internal int radius = 1;
     internal int startTime;
     internal WorldChunk spawnChunk;
-    internal List<Vector3> allBlockCoords;
     private Dictionary<Vector2, WorldRegion> regionMap;
-    private Vector3 currentChunkPos;
+    private Vector3 chunkPos;
+    private Vector3 cachePos;
     private Camera mainCamera;
     private long time = 0;
     private long seed;
@@ -34,15 +33,18 @@ public class World : MonoBehaviour
     void Awake()
     {
         mainCamera = Camera.main;
+
         seed = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
+        System.Random rand = new System.Random((int)seed);
+        seed = rand.Next(int.MaxValue - 1);
+
         startTime = (int)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
-        currentChunkPos = new Vector3(int.MaxValue, 0, int.MaxValue);
+        cachePos = new Vector3(int.MaxValue, 0, int.MaxValue);
         renderDistance = Mathf.RoundToInt(mainCamera.farClipPlane / 16f);
 
         blockPrefabDictionary = new Dictionary<BlockType, GameObject>();
         blockPools = new Dictionary<BlockType, Queue<GameObject>>();
         blockPoolObjects = new Dictionary<BlockType, Transform>();
-        allBlockCoords = new List<Vector3>();
         removeChunks = new List<WorldChunk>();
 
         for (int i = 0; i < blockPrefabs.Count; i++)
@@ -50,8 +52,7 @@ public class World : MonoBehaviour
 
         foreach (BlockPoolInfo p in pools)
         {
-            GameObject poolGo = new GameObject();
-            poolGo.name = "p_" + p.type.ToString();
+            GameObject poolGo = new GameObject("p_" + p.type.ToString());
             poolGo.transform.parent = transform;
             GameObject prefab = blockPrefabDictionary[p.type];
             blockPools.Add(p.type, new Queue<GameObject>());
@@ -62,7 +63,7 @@ public class World : MonoBehaviour
                 blockPools[p.type].Enqueue(o);
             }
         }
-        
+
         GetComponent<LightingCycle>().Configure(this);
         GetComponent<MusicService>().Configure(this);
         Generate();
@@ -72,6 +73,8 @@ public class World : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.LeftArrow)) timeScale /= 2;
         if (Input.GetKeyDown(KeyCode.RightArrow)) timeScale *= 2;
+
+        UpdateWorld();
     }
 
     void Tick()
@@ -81,19 +84,16 @@ public class World : MonoBehaviour
 
         if (player.transform.position.y < 0)
             player.transform.position = spawnpoint;
-
-        UpdateWorld();
     }
 
     void UpdateWorld()
     {
-        Vector3 chunkPos =
-            new Vector3(Mathf.Floor(player.transform.position.x / 16), 0, Mathf.Floor(player.transform.position.z / 16));
+        chunkPos = new Vector3(Mathf.Floor(player.transform.position.x / 16), 0, Mathf.Floor(player.transform.position.z / 16));
 
-        if (currentChunkPos != chunkPos)
+        if (cachePos != chunkPos)
         {
-            currentChunkPos = chunkPos;
-            for (int i = (int)chunkPos.x - renderDistance; i < chunkPos.x + renderDistance; i++)
+            cachePos = chunkPos;
+            for (int i = (int)chunkPos.x - renderDistance; i < chunkPos.x + renderDistance; i++) {
                 for (int j = (int)chunkPos.z - renderDistance; j < (int)chunkPos.z + renderDistance; j++)
                 {
                     int regI = i < 0 ? Mathf.FloorToInt(i / 8f) : Mathf.CeilToInt(i / 8f);
@@ -105,18 +105,22 @@ public class World : MonoBehaviour
                     Vector2 regV = new Vector2(regI, regJ);
                     Vector2 v = new Vector2(inRegI, inRegJ);
 
-                    if (regionMap.ContainsKey(regV) && 
-                        regionMap[regV].chunkMap.ContainsKey(v) && 
+                    if (regionMap.ContainsKey(regV) &&
+                        regionMap[regV].chunkMap.ContainsKey(v) &&
                         !activeChunks.Contains(regionMap[regV].chunkMap[v]))
                     {
                         regionMap[regV].chunkMap[v].Activate();
                         activeChunks.Add(regionMap[regV].chunkMap[v]);
                     }
                 }
+            }   
+
             removeChunks.Clear();
+
             foreach (WorldChunk c in activeChunks)
                 if (Vector3.Distance(c.transform.position + new Vector3(8, 0, 8), player.transform.position) > mainCamera.farClipPlane)
                     removeChunks.Add(c);
+
             foreach (WorldChunk c in removeChunks)
             {
                 c.Deactivate();
@@ -143,7 +147,8 @@ public class World : MonoBehaviour
             WorldChunk chnk = reg.chunkMap[v];
 
             return chnk;
-        } catch (Exception) { return null; }
+        }
+        catch (Exception) { return null; }
     }
 
     void Generate()
