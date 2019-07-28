@@ -18,9 +18,11 @@ public class EntityPlayer : Entity
     {
         cam = Camera.main;
         rbody = GetComponent<Rigidbody>();
-
+#if UNITY_EDITOR
+#else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+#endif
 
         world = GameObject.Find("World").GetComponent<World>();
         world.OnTick += UpdatePresence;

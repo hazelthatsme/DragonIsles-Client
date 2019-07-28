@@ -4,16 +4,26 @@ using UnityEngine;
 
 public class CubeFixer : MonoBehaviour
 {
+    MeshRenderer rend;
+    BoxCollider col;
+    Mesh mesh;
+    Vector2[] UVs;
     /*
      * 
      * Script used to fix Unity's Default Cube model for texture application.
      * Credits to @qole and @robertbu on answers.unity.com
      * 
      */
-    void Start()
+    private void Start()
     {
-        Mesh mesh = GetComponent<MeshFilter>().mesh;
-        Vector2[] UVs = new Vector2[mesh.vertices.Length];
+        mesh = GetComponent<MeshFilter>().mesh;
+        rend = GetComponent<MeshRenderer>();
+        col = GetComponent<BoxCollider>();
+        UVs = new Vector2[mesh.vertices.Length];
+    }
+
+    public void Fix()
+    {
         // Front
         UVs[0] = new Vector2(0.0f, 0.0f);
         UVs[1] = new Vector2(0.333f, 0.0f);
@@ -45,5 +55,14 @@ public class CubeFixer : MonoBehaviour
         UVs[22] = new Vector2(1.0f, 0.666f);
         UVs[23] = new Vector2(1.0f, 0.334f);
         mesh.uv = UVs;
+
+        rend.enabled = true;
+        col.enabled = true;
+    }
+
+    public void Disable()
+    {
+        rend.enabled = false;
+        col.enabled = false;
     }
 }

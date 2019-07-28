@@ -9,7 +9,7 @@ public class WorldChunk : MonoBehaviour
     WorldRegion region;
     long seed;
     internal Dictionary<Vector3, Block> blockMap;
-    Dictionary<Vector2, float> topBlock;
+    internal Dictionary<Vector2, float> topBlock;
     Dictionary<Vector3, GameObject> placedBlocks;
     Vector2 perlinBase;
     bool active = false;
@@ -88,16 +88,15 @@ public class WorldChunk : MonoBehaviour
                 Debug.LogError($"{e.GetType()}: Queue for BlockType {b.type} empty!");
                 break;
             }
-            instance.GetComponent<BoxCollider>().enabled = true;
-            instance.GetComponent<MeshRenderer>().enabled = true;
-            instance.name = b.type.ToString() + "_" + v.x + "," + v.y + "," + v.z;
+            instance.name = "b_" + v.x + "," + v.y + "," + v.z;
+            instance.GetComponent<CubeFixer>().Fix();
             instance.transform.parent = transform;
             instance.transform.localPosition = v;
             placedBlocks.Add(v, instance);
         }
 
         active = true;
-        UpdateBlocks();
+        //UpdateBlocks();
     }
 
     private bool GetObscured(Vector3 v)
@@ -134,7 +133,7 @@ public class WorldChunk : MonoBehaviour
 
     bool getFlag2(Vector3 v)
     {
-        Vector3 posPX = v - new Vector3(1, 0, 0);
+        Vector3 posPX = v + new Vector3(1, 0, 0);
         if (posPX.x > 15)
         {
             posPX = transform.position + v + new Vector3(1, 0, 0);
@@ -241,8 +240,7 @@ public class WorldChunk : MonoBehaviour
             try { t = o.GetComponent<Block>().type; }
             catch (Exception) { t = BlockType.DraconicStone; }
             o.transform.parent = world.blockPoolObjects[t];
-            o.GetComponent<BoxCollider>().enabled = false;
-            o.GetComponent<MeshRenderer>().enabled = false;
+            o.GetComponent<CubeFixer>().Disable();
             world.blockPools[t].Enqueue(o);
         }
         active = false;

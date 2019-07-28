@@ -14,6 +14,11 @@ public class LightingCycle : MonoBehaviour
         world.OnTick += Tick;
     }
 
+    internal void Configure(AbstractWorld world)
+    {
+        world.OnTick += Tick;
+    }
+
     void Tick(object sender, TickEventArgs e)
     {
         RenderSettings.ambientSkyColor = ambientCycle.Evaluate(e.time % 24000 / 24000f);

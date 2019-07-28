@@ -22,16 +22,18 @@ public class World : MonoBehaviour
     private int timeScale = 1;
     private List<WorldChunk> removeChunks;
     private int renderDistance = 0;
+    private EntityPlayer player;
 
-    [Header("World Settings")]
+    [Header("Prefab Settings")]
     public GameObject regionPrefab;
-    public EntityPlayer player;
+    public GameObject playerPrefab;
     [Header("Pool Settings")]
     public List<BlockPoolInfo> pools;
     public List<BlockPrefab> blockPrefabs;
 
     void Awake()
     {
+        player = Instantiate(playerPrefab, Vector3.zero, Quaternion.identity, transform.root).GetComponent<EntityPlayer>();
         mainCamera = Camera.main;
 
         seed = (long)(DateTime.UtcNow - new DateTime(1970, 1, 1)).TotalSeconds;
@@ -93,11 +95,14 @@ public class World : MonoBehaviour
         if (cachePos != chunkPos)
         {
             cachePos = chunkPos;
-            for (int i = (int)chunkPos.x - renderDistance; i < chunkPos.x + renderDistance; i++) {
-                for (int j = (int)chunkPos.z - renderDistance; j < (int)chunkPos.z + renderDistance; j++)
+            for (int i = (int)chunkPos.x - renderDistance; i <= (int)chunkPos.x + renderDistance; i++) {
+                for (int j = (int)chunkPos.z - renderDistance; j <= (int)chunkPos.z + renderDistance; j++)
                 {
-                    int regI = i < 0 ? Mathf.FloorToInt(i / 8f) : Mathf.CeilToInt(i / 8f);
-                    int regJ = j < 0 ? Mathf.FloorToInt(j / 8f) : Mathf.CeilToInt(j / 8f);
+                    //int regI = i < 0 ? Mathf.FloorToInt(i / 8f) : Mathf.CeilToInt(i / 8f);
+                    //int regJ = j < 0 ? Mathf.FloorToInt(j / 8f) : Mathf.CeilToInt(j / 8f);
+
+                    int regI = Mathf.FloorToInt(i / 8f);
+                    int regJ = Mathf.FloorToInt(j / 8f);
 
                     int inRegI = (i * 16 - regI * 128) / 16;
                     int inRegJ = (j * 16 - regJ * 128) / 16;
@@ -105,6 +110,10 @@ public class World : MonoBehaviour
                     Vector2 regV = new Vector2(regI, regJ);
                     Vector2 v = new Vector2(inRegI, inRegJ);
 
+                    /*if (regionMap.ContainsKey(regV) &&
+                        regionMap[regV].chunkMap.ContainsKey(v))
+                        Debug.Log("Relative Chunk " + new Vector2(i, j) + " returned: " + regionMap[regV].chunkMap[v]);*/
+                    
                     if (regionMap.ContainsKey(regV) &&
                         regionMap[regV].chunkMap.ContainsKey(v) &&
                         !activeChunks.Contains(regionMap[regV].chunkMap[v]))
@@ -166,6 +175,8 @@ public class World : MonoBehaviour
                 region.GetComponent<WorldRegion>().Configure(this, seed);
             }
 
+        spawnpoint = new Vector3(0, 21, 0);
+        
         player.transform.position = spawnpoint;
 
         InvokeRepeating("Tick", .0f, .05f);
